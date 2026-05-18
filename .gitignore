@@ -1,0 +1,75 @@
+# ===========================
+# Virtual Environment
+# ===========================
+venv/
+env/
+ENV/
+.env
+
+# ===========================
+# Python cache files
+# ===========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# ===========================
+# Jupyter Notebook checkpoints
+# ===========================
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ===========================
+# Dataset & Audio files
+# (too large for GitHub)
+# ===========================
+data/
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.npy
+*.npz
+
+# ===========================
+# Trained model files
+# (too large for GitHub)
+# ===========================
+models/
+*.pt
+*.pth
+*.pkl
+*.h5
+*.ckpt
+
+# ===========================
+# VS Code settings
+# ===========================
+.vscode/
+
+# ===========================
+# OS generated files
+# ===========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===========================
+# Logs & outputs
+# ===========================
+*.log
+*.png
+*.jpg
+*.jpeg
+logs/
+outputs/
+
+# ===========================
+# Environment variable files
+# (never push secrets!)
+# ===========================
+.env
+.env.local
+*.env
