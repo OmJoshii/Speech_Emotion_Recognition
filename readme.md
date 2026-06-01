@@ -48,6 +48,45 @@ Extract and place inside `data/ravdess/` folder.
 
 ---
 
+## Setup Instructions
+
+### 1. Clone the repository
+```bash
+git clone <your-repo-url>
+cd speech_emotion_recognition
+```
+
+### 2. Create and activate virtual environment
+```bash
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+
+# Mac/Linux
+source venv/bin/activate
+```
+
+### 3. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Download dataset
+Download RAVDESS from the link above and place in `data/ravdess/`
+
+### 5. Run feature extraction
+```bash
+python src/extract_features.py
+```
+
+### 6. Run preprocessing
+```bash
+python src/preprocess.py
+```
+
+--- 
+
 ## Tech Stack
 
 | Tool | Purpose |
@@ -69,5 +108,27 @@ Extract and place inside `data/ravdess/` folder.
 | MFCC (mean + std) | (94,) | Baseline MLP model |
 | Mel Spectrogram | (128, 130) | CNN model |
 | MFCC Sequence | (130, 40) | LSTM model |
+
+---
+
+## Data Split
+
+| Split | Samples | Percentage |
+|-------|---------|------------|
+| Training | 2017 | 70% |
+| Validation | 431 | 15% |
+| Test | 432 | 15% |
+
+---
+
+## Class Weights (handling imbalance)
+
+| Emotion | Files | Weight |
+|---------|-------|--------|
+| Neutral | 192 | 1.8815 |
+| All others | 384 each | 0.9373 |
+
+Neutral has fewer samples so it gets a higher weight during training
+to ensure the model pays equal attention to all emotions.
 
 ---
