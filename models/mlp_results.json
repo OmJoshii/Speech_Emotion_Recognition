@@ -1,0 +1,7 @@
+{
+    "model": "MLP",
+    "test_accuracy": 93.75,
+    "test_loss": 0.2036,
+    "epochs_trained": 66,
+    "parameters": 66888
+}
