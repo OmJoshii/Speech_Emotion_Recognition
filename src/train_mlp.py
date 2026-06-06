@@ -167,7 +167,7 @@ def load_data():
     train_loader = DataLoader(train_dataset,
                           batch_size=BATCH_SIZE,
                           shuffle=True,
-                          )
+                          drop_last=True)
     # shuffle=True randomizes order each epoch
     # prevents model from memorizing order
 
