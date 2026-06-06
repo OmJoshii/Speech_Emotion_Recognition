@@ -138,8 +138,8 @@ to ensure the model pays equal attention to all emotions.
 | Model | Accuracy | F1 Score |
 |-------|----------|----------|
 | MLP Baseline | 93.75% | 0.93 |
-| CNN | - | - |
-| LSTM | - | - |
-| CNN-LSTM | - | - |
+| CNN          | 90.97% | 0.91 |
+| LSTM         | -      | -    |
+| CNN-LSTM     | -      | -    |
 
 ---
