@@ -132,3 +132,14 @@ Neutral has fewer samples so it gets a higher weight during training
 to ensure the model pays equal attention to all emotions.
 
 ---
+
+## Results
+
+| Model | Accuracy | F1 Score |
+|-------|----------|----------|
+| MLP Baseline | 93.75% | 0.93 |
+| CNN | - | - |
+| LSTM | - | - |
+| CNN-LSTM | - | - |
+
+---
