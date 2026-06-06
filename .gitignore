@@ -44,6 +44,11 @@ models/
 *.h5
 *.ckpt
 
+# Allow these result files from models/
+!models/
+!models/*.json
+!models/*.png
+
 # ===========================
 # VS Code settings
 # ===========================
