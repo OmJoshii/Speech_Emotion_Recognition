@@ -10,7 +10,7 @@ import pandas as pd
 import os
 
 print("=" * 50)
-print("   Phase 3: Feature Exploration")
+print("  Feature Exploration")
 print("=" * 50)
 
 # ── Load sample files for different emotions ───────────
@@ -70,7 +70,7 @@ for idx, (emotion, data) in enumerate(samples.items()):
           f"({mfcc.shape[0]} coefficients × {mfcc.shape[1]} frames)")
 
 plt.tight_layout()
-plt.savefig('notebooks/phase3_mfcc_comparison.png',
+plt.savefig('notebooks/mfcc_comparison.png',
             dpi=150, bbox_inches='tight')
 plt.show()
 print("MFCC comparison saved!")
@@ -111,7 +111,7 @@ for idx, (emotion, data) in enumerate(samples.items()):
           f"({mel.shape[0]} mel bands × {mel.shape[1]} frames)")
 
 plt.tight_layout()
-plt.savefig('notebooks/phase3_mel_comparison.png',
+plt.savefig('notebooks/mel_comparison.png',
             dpi=150, bbox_inches='tight')
 plt.show()
 print("Mel Spectrogram comparison saved!")
@@ -150,7 +150,7 @@ for idx, (emotion, data) in enumerate(samples.items()):
           f"Mean RMS={rms.mean():.4f}")
 
 plt.tight_layout()
-plt.savefig('notebooks/phase3_zcr_rms_comparison.png',
+plt.savefig('notebooks/zcr_rms_comparison.png',
             dpi=150, bbox_inches='tight')
 plt.show()
 print("ZCR/RMS comparison saved!")
