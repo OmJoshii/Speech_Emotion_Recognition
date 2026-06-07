@@ -9,7 +9,7 @@ from sklearn.metrics import (accuracy_score,
 import seaborn as sns
 
 print("=" * 50)
-print("   Phase 5: MLP Exploration")
+print("      MLP Exploration")
 print("=" * 50)
 
 # ── Load preprocessed data ─────────────────────────────
@@ -73,7 +73,7 @@ plt.xlabel('Predicted Emotion')
 plt.xticks(rotation=45)
 plt.yticks(rotation=0)
 plt.tight_layout()
-plt.savefig('notebooks/phase5_confusion_matrix.png',
+plt.savefig('notebooks/confusion_matrix.png',
             dpi=150, bbox_inches='tight')
 plt.show()
 
