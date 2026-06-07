@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 print("=" * 50)
-print("   Phase 6: CNN Exploration")
+print("       CNN Exploration")
 print("=" * 50)
 
 # ── Load a few mel spectrograms ────────────────────────
@@ -50,7 +50,7 @@ for emotion_idx in range(8):
     ax.set_ylabel('Mel bands')
 
 plt.tight_layout()
-plt.savefig('notebooks/phase6_spectrograms.png',
+plt.savefig('notebooks/spectrograms.png',
             dpi=150, bbox_inches='tight')
 plt.show()
 print("Spectrogram visualization saved!")
@@ -105,7 +105,7 @@ axes[1].set_xlabel('Time frames')
 axes[1].set_ylabel('Mel bands')
 
 plt.tight_layout()
-plt.savefig('notebooks/phase6_conv_filter.png',
+plt.savefig('notebooks/conv_filter.png',
             dpi=150, bbox_inches='tight')
 plt.show()
 print("Convolution visualization saved!")
