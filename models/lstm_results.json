@@ -1,0 +1,7 @@
+{
+    "model": "LSTM",
+    "test_accuracy": 96.53,
+    "test_loss": 0.1151,
+    "epochs_trained": 80,
+    "parameters": 348745
+}
