@@ -1,4 +1,3 @@
-# phase1_audio_basics.py
 # Phase 1: Understanding audio visually
 
 # ── Imports ────────────────────────────────────────────
@@ -139,9 +138,9 @@ fig.colorbar(ax4.collections[0], ax=ax4)
 print("MFCC plotted ✅")
 
 # ── Save & Show ────────────────────────────────────────
-plt.savefig('notebooks/phase1_audio_visualizations.png',
+plt.savefig('notebooks/audio_visualizations.png',
             dpi=150, bbox_inches='tight')
 plt.show()
 
 print("\n✅ Phase 1 complete!")
-print("Image saved to src/phase1_audio_visualizations.png")
+print("Image saved to notebooks/audio_visualizations.png")
