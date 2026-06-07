@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 print("=" * 50)
-print("   Phase 7: LSTM Exploration")
+print("       LSTM Exploration")
 print("=" * 50)
 
 # ── Load MFCC sequences ────────────────────────────────
@@ -50,7 +50,7 @@ for emotion_idx in range(8):
     ax.set_ylabel('MFCC coefficients')
 
 plt.tight_layout()
-plt.savefig('notebooks/phase7_mfcc_sequences.png',
+plt.savefig('notebooks/mfcc_sequences.png',
             dpi=150, bbox_inches='tight')
 plt.show()
 print("MFCC sequences saved!")
@@ -99,7 +99,7 @@ plt.title('LSTM Hidden States Over Time\n'
 plt.xlabel('Time steps (130 frames of audio)')
 plt.ylabel('LSTM hidden units (showing first 20)')
 plt.tight_layout()
-plt.savefig('notebooks/phase7_lstm_hidden_states.png',
+plt.savefig('notebooks/lstm_hidden_states.png',
             dpi=150, bbox_inches='tight')
 plt.show()
 print("LSTM hidden states visualization saved!")
