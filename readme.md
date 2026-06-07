@@ -135,11 +135,21 @@ to ensure the model pays equal attention to all emotions.
 
 ## Results
 
-| Model | Accuracy | F1 Score |
-|-------|----------|----------|
-| MLP Baseline | 93.75% | 0.93 |
-| CNN          | 90.97% | 0.91 |
-| LSTM         | -      | -    |
-| CNN-LSTM     | -      | -    |
+| Model | Accuracy | F1 Score | Parameters |
+|-------|----------|----------|------------|
+| MLP Baseline | 93.75% | 0.93 | 66,888 |
+| CNN | 90.97% | 0.91 | 430,856 |
+| LSTM | 96.53% | 0.96 | 348,745 |
+| CNN-LSTM | 92.36% | 0.93 | 982,921 |
+
+**Best Model: LSTM with 96.53% test accuracy**
+
+---
+
+### Key Findings
+- LSTM outperformed all models — speech emotion is inherently sequential
+- CNN overfitted due to limited dataset size (2017 training samples)
+- Handcrafted MFCC features proved more effective than learned representations on this dataset size
+- Neutral emotion was consistently hardest to classify across all models
 
 ---
