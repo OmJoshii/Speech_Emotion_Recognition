@@ -137,12 +137,12 @@ to ensure the model pays equal attention to all emotions.
 
 | Model | Accuracy | F1 Score | Parameters |
 |-------|----------|----------|------------|
-| MLP Baseline | 93.75% | 0.93 | 66,888 |
-| CNN | 90.97% | 0.91 | 430,856 |
-| LSTM | 96.53% | 0.96 | 348,745 |
-| CNN-LSTM | 92.36% | 0.93 | 982,921 |
+| MLP Baseline | 93.75% | 0.932 | 66,888 |
+| CNN | 90.97% | 0.903 | 430,856 |
+| LSTM | 96.53% | 0.962 | 348,745 |
+| CNN-LSTM | 92.36% | 0.928 | 982,921 |
 
-**Best Model: LSTM with 96.53% test accuracy**
+**Best Model: LSTM with 96.53% test accuracy and 0.962 F1 score**
 
 ---
 
@@ -151,5 +151,13 @@ to ensure the model pays equal attention to all emotions.
 - CNN overfitted due to limited dataset size (2017 training samples)
 - Handcrafted MFCC features proved more effective than learned representations on this dataset size
 - Neutral emotion was consistently hardest to classify across all models
+- Low-order MFCC coefficients (1-9) are the most important features
+- RMS energy is 6th most important — loudness is a key emotion signal
+- More parameters does not mean better accuracy
 
 ---
+
+### Explainability
+- Feature importance analysis confirms MFCC dominance
+- Grad-CAM shows CNN focuses on high-energy regions
+- LSTM attention highlights emotionally peak moments in speech
