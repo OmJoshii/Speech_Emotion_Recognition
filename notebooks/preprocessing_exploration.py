@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 from collections import Counter
 
 print("=" * 50)
-print("   Phase 4: Preprocessing Exploration")
+print("        Preprocessing Exploration")
 print("=" * 50)
 
 # ── Load extracted features ────────────────────────────
@@ -87,7 +87,7 @@ for i, w in enumerate(weight_values):
                  ha='center', fontsize=9)
 
 plt.tight_layout()
-plt.savefig('notebooks/phase4_class_distribution.png',
+plt.savefig('notebooks/class_distribution.png',
             dpi=150, bbox_inches='tight')
 plt.show()
 print("\nClass distribution plot saved!")
@@ -134,7 +134,7 @@ axes[1].set_xlabel('Value')
 axes[1].set_ylabel('Frequency')
 
 plt.tight_layout()
-plt.savefig('notebooks/phase4_normalization.png',
+plt.savefig('notebooks/normalization.png',
             dpi=150, bbox_inches='tight')
 plt.show()
 print("Normalization comparison saved!")
@@ -192,9 +192,9 @@ for ax, (split_name, split_y) in zip(
     ax.tick_params(axis='x', rotation=45)
 
 plt.tight_layout()
-plt.savefig('notebooks/phase4_split_distribution.png',
+plt.savefig('notebooks/split_distribution.png',
             dpi=150, bbox_inches='tight')
 plt.show()
 print("Split distribution plot saved!")
 
-print("\n✅ Phase 4 exploration complete!")
+print("\n✅ Preprocessing exploration complete!")
