@@ -1,0 +1,7 @@
+{
+    "model": "CNN LSTM",
+    "test_accuracy": 92.36,
+    "test_loss": 0.2432,
+    "epochs_trained": 66,
+    "parameters": 982921
+}
