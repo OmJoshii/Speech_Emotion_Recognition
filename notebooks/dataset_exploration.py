@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns   # for beautiful plots
 
 print("=" * 50)
-print("   Phase 2: Dataset Exploration")
+print("  Dataset Exploration  ")
 print("=" * 50)
 
 # ── Emotion Mapping ────────────────────────────────────
@@ -203,7 +203,7 @@ for i, (intens, count) in enumerate(intensity_counts.items()):
                     ha='center', fontsize=9)
 
 plt.tight_layout()
-plt.savefig('notebooks/phase2_dataset_exploration.png',
+plt.savefig('notebooks/dataset_exploration.png',
             dpi=150, bbox_inches='tight')
 plt.show()
 print("\n Visualization saved!")
