@@ -24,15 +24,15 @@ print(f"Using device: {device}")
 
 # ── Constants ──────────────────────────────────────────
 INPUT_SIZE   = 94      # number of features per sample
-NUM_CLASSES  = 8       # number of emotions
+NUM_CLASSES  = 6       # number of emotions
 BATCH_SIZE   = 32      # samples per batch
 EPOCHS       = 100     # training iterations
 LEARNING_RATE = 0.001  # how fast model learns
 DROPOUT_RATE  = 0.3    # 30% neurons dropped during training
 
 # Emotion label names for display
-EMOTION_NAMES = ['neutral', 'calm',     'happy',    'sad',
-                 'angry',   'fearful',  'disgust',  'surprised']
+EMOTION_NAMES = ['neutral', 'happy', 'sad',
+                 'angry', 'fearful', 'disgust']
 
 
 # ══════════════════════════════════════════════════════
