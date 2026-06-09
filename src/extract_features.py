@@ -261,7 +261,100 @@ def process_all_files(csv_path='data/ravdess_files.csv'):
     return X_fixed, X_mel, X_mfcc, y_labels
 
 
+
+def process_all_datasets(csv_path='data/all_datasets.csv'):
+    """
+    Processes all datasets from the combined CSV.
+    Uses the unified 6-emotion label mapping.
+    """
+    print("=" * 55)
+    print("   Feature Extraction — All Datasets")
+    print("=" * 55)
+
+    # Check if combined CSV exists
+    if not os.path.exists(csv_path):
+        print(f"\n❌ {csv_path} not found!")
+        print("Run src/load_datasets.py first!")
+        return
+
+    df = pd.read_csv(csv_path)
+    print(f"\nTotal files to process: {len(df)}")
+    print("This will take 15-30 minutes on CPU...")
+    print("Please wait...\n")
+
+    os.makedirs('data/features', exist_ok=True)
+
+    fixed_features = []
+    mel_features   = []
+    mfcc_sequences = []
+    labels         = []
+    failed         = 0
+
+    for idx, row in tqdm(df.iterrows(),
+                          total=len(df),
+                          desc="Extracting features"):
+        try:
+            y, sr = load_audio(row['file_path'])
+
+            fixed   = extract_fixed_features(y, sr)
+            mel     = extract_mel_spectrogram(y, sr)
+            mfcc_sq = extract_mfcc_sequence(y, sr)
+
+            fixed_features.append(fixed)
+            mel_features.append(mel)
+            mfcc_sequences.append(mfcc_sq)
+            labels.append(int(row['label']))
+
+        except Exception as e:
+            failed += 1
+            continue
+
+    print(f"\nProcessed : {len(labels)} files")
+    print(f"Failed    : {failed} files")
+
+    # Convert to numpy arrays
+    X_fixed  = np.array(fixed_features)
+    X_mel    = np.array(mel_features)
+    X_mfcc   = np.array(mfcc_sequences)
+    y_labels = np.array(labels)
+
+    print(f"\n── Feature Shapes ──────────────────────")
+    print(f"Fixed features  : {X_fixed.shape}")
+    print(f"Mel spectrogram : {X_mel.shape}")
+    print(f"MFCC sequence   : {X_mfcc.shape}")
+    print(f"Labels          : {y_labels.shape}")
+
+    # Save features
+    print(f"\nSaving features to data/features/...")
+    np.save('data/features/X_fixed.npy',  X_fixed)
+    np.save('data/features/X_mel.npy',    X_mel)
+    np.save('data/features/X_mfcc.npy',   X_mfcc)
+    np.save('data/features/y_labels.npy', y_labels)
+
+    # Save updated label mapping (6 emotions)
+    label_df = pd.DataFrame({
+        'label_int' : [0, 1, 2, 3, 4, 5],
+        'label_name': ['neutral', 'happy', 'sad',
+                       'angry',   'fearful', 'disgust']
+    })
+    label_df.to_csv(
+        'data/features/label_mapping.csv', index=False
+    )
+
+    print("✅ X_fixed.npy   saved")
+    print("✅ X_mel.npy     saved")
+    print("✅ X_mfcc.npy    saved")
+    print("✅ y_labels.npy  saved")
+    print("✅ label_mapping.csv saved")
+
+    print(f"\n{'='*55}")
+    print(f"   Feature Extraction Complete! 🎉")
+    print(f"{'='*55}")
+
+    return X_fixed, X_mel, X_mfcc, y_labels
+
+
 # ── Run the extraction ─────────────────────────────────
 
 if __name__ == '__main__':
-    X_fixed, X_mel, X_mfcc, y = process_all_files()
+    process_all_datasets()
