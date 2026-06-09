@@ -16,9 +16,8 @@ VAL_SIZE     = 0.176  # ~15% of total for validation
 
 # Emotion label mapping
 EMOTION_NAMES = {
-    0: 'neutral',  1: 'calm',     2: 'happy',
-    3: 'sad',      4: 'angry',    5: 'fearful',
-    6: 'disgust',  7: 'surprised'
+    0: 'neutral',  1: 'happy',   2: 'sad',
+    3: 'angry',    4: 'fearful', 5: 'disgust'
 }
 NUM_CLASSES = len(EMOTION_NAMES)
 
