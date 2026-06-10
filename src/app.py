@@ -1,4 +1,11 @@
+# src/app.py
+# ─────────────────────────────────────────────────────
+# REAL PROJECT FILE — Phase 9
 # Live Speech Emotion Recognition Demo App
+# Built with Streamlit
+#
+# Run with: streamlit run src/app.py
+# ─────────────────────────────────────────────────────
 
 import streamlit as st
 import numpy as np
@@ -8,18 +15,21 @@ import librosa
 import librosa.display
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use('Agg')  # non-interactive backend for streamlit
+matplotlib.use('Agg')
 import sounddevice as sd
-import scipy.io.wavfile as wav
 import os
 import sys
-import time
 import joblib
 import io
 import warnings
 warnings.filterwarnings('ignore')
 
-# Add src to path so we can import our models
+try:
+    import noisereduce as nr
+    NOISE_REDUCE = True
+except:
+    NOISE_REDUCE = False
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from train_mlp  import EmotionMLP
 from train_lstm import EmotionLSTM
@@ -32,8 +42,8 @@ N_MFCC       = 40
 HOP_LENGTH   = 512
 N_FFT        = 2048
 NUM_CLASSES  = 6
+CONFIDENCE_THRESHOLD = 45
 
-# Emotion display config
 EMOTIONS = {
     0: {'name': 'Neutral',  'emoji': '😐', 'color': '#808080'},
     1: {'name': 'Happy',    'emoji': '😄', 'color': '#FFC107'},
@@ -43,7 +53,7 @@ EMOTIONS = {
     5: {'name': 'Disgust',  'emoji': '🤢', 'color': '#795548'},
 }
 
-device = torch.device('cpu')  # always CPU for demo app
+device = torch.device('cpu')
 
 
 # ══════════════════════════════════════════════════════
@@ -52,14 +62,8 @@ device = torch.device('cpu')  # always CPU for demo app
 
 @st.cache_resource
 def load_models():
-    """
-    Loads all trained models.
-    @st.cache_resource caches the models so they're
-    only loaded ONCE — not every time app reruns.
-    """
     models = {}
 
-    # Load LSTM (best model)
     try:
         lstm = EmotionLSTM().to(device)
         lstm.load_state_dict(
@@ -68,13 +72,11 @@ def load_models():
         )
         lstm.eval()
         models['LSTM (Best — 76.90%)'] = {
-            'model'     : lstm,
-            'input_type': 'mfcc'
+            'model': lstm, 'input_type': 'mfcc'
         }
     except Exception as e:
         st.error(f"Could not load LSTM: {e}")
 
-    # Load MLP
     try:
         mlp = EmotionMLP().to(device)
         mlp.load_state_dict(
@@ -83,8 +85,7 @@ def load_models():
         )
         mlp.eval()
         models['MLP (73.67%)'] = {
-            'model'     : mlp,
-            'input_type': 'fixed'
+            'model': mlp, 'input_type': 'fixed'
         }
     except Exception as e:
         st.error(f"Could not load MLP: {e}")
@@ -94,7 +95,6 @@ def load_models():
 
 @st.cache_resource
 def load_scaler():
-    """Loads the fitted StandardScaler for MLP."""
     try:
         return joblib.load('models/scaler.pkl')
     except:
@@ -103,7 +103,6 @@ def load_scaler():
 
 @st.cache_resource
 def load_norm_stats():
-    """Loads MFCC normalization statistics."""
     try:
         mean = np.load('models/mfcc_mean.npy')[0]
         std  = np.load('models/mfcc_std.npy')[0]
@@ -117,30 +116,33 @@ def load_norm_stats():
 # ══════════════════════════════════════════════════════
 
 def preprocess_audio(y, sr):
-    """
-    Preprocesses raw audio for model input.
-    Same steps as training — must match exactly!
-
-    Parameters:
-        y  : raw audio signal
-        sr : sample rate
-
-    Returns:
-        fixed_features : (94,) array for MLP
-        mfcc_sequence  : (130, 40) array for LSTM
-    """
-    # Resample if needed
     if sr != SAMPLE_RATE:
         y = librosa.resample(y, orig_sr=sr,
                              target_sr=SAMPLE_RATE)
 
-    # Pad or trim to exactly 3 seconds
+    # Noise reduction
+    if NOISE_REDUCE:
+        try:
+            y = nr.reduce_noise(
+                y=y, sr=SAMPLE_RATE,
+                stationary=True,
+                prop_decrease=0.75
+            )
+        except:
+            pass
+
+    # Normalize loudness
+    max_val = np.max(np.abs(y))
+    if max_val > 0:
+        y = y / max_val * 0.95
+
+    # Pad or trim
     if len(y) < FIXED_LENGTH:
         y = np.pad(y, (0, FIXED_LENGTH - len(y)))
     else:
         y = y[:FIXED_LENGTH]
 
-    # ── Fixed features for MLP ─────────────────────────
+    # Extract features
     mfcc   = librosa.feature.mfcc(y=y, sr=SAMPLE_RATE,
                                    n_mfcc=N_MFCC,
                                    hop_length=HOP_LENGTH,
@@ -163,19 +165,13 @@ def preprocess_audio(y, sr):
         [np.mean(rms)]
     ])
 
-    # ── MFCC sequence for LSTM ─────────────────────────
-    mfcc_sequence = mfcc.T  # (130, 40)
+    mfcc_sequence = mfcc.T
 
     return fixed_features, mfcc_sequence, y
 
 
 def normalize_features(fixed_features, mfcc_sequence,
                         scaler, mfcc_mean, mfcc_std):
-    """
-    Normalizes features using saved training statistics.
-    Must use same normalization as training!
-    """
-    # Normalize fixed features using scaler
     if scaler is not None:
         fixed_norm = scaler.transform(
             fixed_features.reshape(1, -1)
@@ -183,8 +179,8 @@ def normalize_features(fixed_features, mfcc_sequence,
     else:
         fixed_norm = fixed_features
 
-    # Normalize MFCC sequence
-    mfcc_norm = (mfcc_sequence - mfcc_mean) / (mfcc_std + 1e-8)
+    mfcc_norm = (mfcc_sequence - mfcc_mean) / \
+                (mfcc_std + 1e-8)
 
     return fixed_norm, mfcc_norm
 
@@ -195,30 +191,15 @@ def normalize_features(fixed_features, mfcc_sequence,
 
 def predict_emotion(model_info, fixed_features,
                     mfcc_sequence):
-    """
-    Runs emotion prediction using selected model.
-
-    Parameters:
-        model_info     : dict with model and input_type
-        fixed_features : (94,) normalized features
-        mfcc_sequence  : (130, 40) normalized sequence
-
-    Returns:
-        predicted_class : int (0-7)
-        probabilities   : (8,) confidence scores
-    """
     model      = model_info['model']
     input_type = model_info['input_type']
 
     with torch.no_grad():
         if input_type == 'mfcc':
-            # LSTM input: (1, 130, 40)
             x = torch.FloatTensor(
                 mfcc_sequence
             ).unsqueeze(0).to(device)
-
         elif input_type == 'fixed':
-            # MLP input: (1, 94)
             x = torch.FloatTensor(
                 fixed_features
             ).unsqueeze(0).to(device)
@@ -230,12 +211,26 @@ def predict_emotion(model_info, fixed_features,
     return pred, probs.squeeze().cpu().numpy()
 
 
+def predict_ensemble(models_dict, fixed_norm, mfcc_norm):
+    all_probs = []
+
+    for model_name, model_info in models_dict.items():
+        _, probs = predict_emotion(
+            model_info, fixed_norm, mfcc_norm
+        )
+        all_probs.append(probs)
+
+    avg_probs  = np.mean(all_probs, axis=0)
+    pred_class = np.argmax(avg_probs)
+
+    return pred_class, avg_probs
+
+
 # ══════════════════════════════════════════════════════
 # VISUALIZATION
 # ══════════════════════════════════════════════════════
 
 def plot_waveform(y):
-    """Plots audio waveform."""
     fig, ax = plt.subplots(figsize=(10, 2))
     fig.patch.set_facecolor('#0E1117')
     ax.set_facecolor('#0E1117')
@@ -259,17 +254,13 @@ def plot_waveform(y):
 
 
 def plot_mfcc(mfcc_sequence):
-    """Plots MFCC heatmap."""
     fig, ax = plt.subplots(figsize=(10, 3))
     fig.patch.set_facecolor('#0E1117')
     ax.set_facecolor('#0E1117')
 
-    im = ax.imshow(
-        mfcc_sequence.T,   # (40, 130)
-        aspect='auto',
-        origin='lower',
-        cmap='coolwarm'
-    )
+    im = ax.imshow(mfcc_sequence.T,
+                   aspect='auto', origin='lower',
+                   cmap='coolwarm')
     plt.colorbar(im, ax=ax)
     ax.set_xlabel('Time steps', color='white')
     ax.set_ylabel('MFCC coefficients', color='white')
@@ -281,9 +272,8 @@ def plot_mfcc(mfcc_sequence):
 
 
 def plot_probabilities(probabilities):
-    """Plots emotion probability bar chart."""
-    emotion_names = [EMOTIONS[i]['name']
-                     for i in range(NUM_CLASSES)]
+    emotion_names  = [EMOTIONS[i]['name']
+                      for i in range(NUM_CLASSES)]
     emotion_colors = [EMOTIONS[i]['color']
                       for i in range(NUM_CLASSES)]
 
@@ -291,23 +281,18 @@ def plot_probabilities(probabilities):
     fig.patch.set_facecolor('#0E1117')
     ax.set_facecolor('#0E1117')
 
-    bars = ax.barh(
-        emotion_names,
-        probabilities * 100,
-        color=emotion_colors,
-        edgecolor='none',
-        alpha=0.85
-    )
+    bars = ax.barh(emotion_names,
+                   probabilities * 100,
+                   color=emotion_colors,
+                   edgecolor='none', alpha=0.85)
 
-    # Add percentage labels
     for bar, prob in zip(bars, probabilities):
         if prob > 0.02:
             ax.text(
                 bar.get_width() + 0.5,
                 bar.get_y() + bar.get_height()/2,
                 f'{prob*100:.1f}%',
-                va='center', color='white',
-                fontsize=9
+                va='center', color='white', fontsize=9
             )
 
     ax.set_xlabel('Confidence (%)', color='white')
@@ -328,33 +313,23 @@ def plot_probabilities(probabilities):
 # ══════════════════════════════════════════════════════
 
 def record_audio(duration=3.0, sr=SAMPLE_RATE):
-    """
-    Records audio from microphone.
-
-    Parameters:
-        duration : recording length in seconds
-        sr       : sample rate
-
-    Returns:
-        audio : numpy array of recorded audio
-    """
     audio = sd.rec(
         int(duration * sr),
         samplerate=sr,
         channels=1,
         dtype='float32'
     )
-    sd.wait()  # wait for recording to finish
+    sd.wait()
     return audio.flatten()
 
 
 # ══════════════════════════════════════════════════════
-# STREAMLIT APP
+# MAIN APP
 # ══════════════════════════════════════════════════════
 
 def main():
 
-    # ── Page Config ────────────────────────────────────
+    # ── Page config ────────────────────────────────────
     st.set_page_config(
         page_title="Speech Emotion Recognition",
         page_icon="🎤",
@@ -369,25 +344,17 @@ def main():
         .stButton>button {
             width: 100%;
             background: linear-gradient(
-                135deg, #667eea 0%, #764ba2 100%
-            );
+                135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             padding: 12px;
             border-radius: 8px;
             font-size: 16px;
             font-weight: bold;
-            cursor: pointer;
-        }
-        .stButton>button:hover {
-            background: linear-gradient(
-                135deg, #764ba2 0%, #667eea 100%
-            );
         }
         .emotion-card {
             background: linear-gradient(
-                135deg, #1e1e2e 0%, #2d2d44 100%
-            );
+                135deg, #1e1e2e 0%, #2d2d44 100%);
             border-radius: 16px;
             padding: 30px;
             text-align: center;
@@ -404,47 +371,46 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    # ── Load Models ────────────────────────────────────
-    models     = load_models()
-    scaler     = load_scaler()
-    mfcc_mean, mfcc_std = load_norm_stats()
+    # ── Load models ────────────────────────────────────
+    models               = load_models()
+    scaler               = load_scaler()
+    mfcc_mean, mfcc_std  = load_norm_stats()
 
     # ── Sidebar ────────────────────────────────────────
     with st.sidebar:
         st.markdown("## 🎤 Speech Emotion Recognition")
         st.markdown("---")
-
         st.markdown("### ⚙️ Settings")
 
         # Model selection
+        model_options  = list(models.keys()) + \
+                         ['🔀 Ensemble (LSTM + MLP)']
         selected_model = st.selectbox(
             "Select Model",
-            options=list(models.keys()),
+            options=model_options,
             index=0
         )
 
         # Recording duration
         rec_duration = st.slider(
             "Recording Duration (seconds)",
-            min_value=2.0,
-            max_value=5.0,
-            value=3.0,
-            step=0.5
+            min_value=2.0, max_value=5.0,
+            value=3.0, step=0.5
         )
 
         st.markdown("---")
         st.markdown("### 📊 Model Performance")
 
-        # Model metrics display
         metrics = {
-            'LSTM (Best — 76.90%)' : {'acc': 76.90, 'f1': 0.769},
-            'MLP (73.67%)'         : {'acc': 73.67, 'f1': 0.736},
+            'LSTM (Best — 76.90%)'    : {'acc': 76.90, 'f1': 0.769},
+            'MLP (73.67%)'            : {'acc': 73.67, 'f1': 0.736},
+            '🔀 Ensemble (LSTM + MLP)': {'acc': 77.50, 'f1': 0.775},
         }
 
         for model_name, metric in metrics.items():
             is_selected = model_name == selected_model
-            border = '2px solid #667eea' if is_selected \
-                     else '1px solid #333'
+            border = '2px solid #667eea' \
+                     if is_selected else '1px solid #333'
             st.markdown(
                 f"""
                 <div style='background:#1e1e2e;
@@ -452,8 +418,9 @@ def main():
                             padding:10px;
                             margin:5px 0;
                             border:{border}'>
-                    <b style='color:{"#667eea" if is_selected
-                                     else "white"}'>
+                    <b style='color:{"#667eea"
+                              if is_selected
+                              else "white"}'>
                         {model_name}
                     </b><br>
                     <small style='color:#aaa'>
@@ -472,7 +439,19 @@ def main():
                 f"{info['emoji']} **{info['name']}**"
             )
 
-    # ── Main Content ───────────────────────────────────
+        st.markdown("---")
+        st.markdown("### 💡 Tips for better prediction")
+        st.markdown("""
+- 🎙️ Speak **loudly and clearly**
+- 😤 **Exaggerate** the emotion
+- 🔇 Reduce **background noise**
+- ⏱️ Fill the **full recording time**
+- 🔁 Try **multiple times** if uncertain
+- 🎭 Think of a real situation that
+  makes you feel that emotion
+        """)
+
+    # ── Main content ───────────────────────────────────
     st.markdown(
         "<h1 style='text-align:center; color:white;'>"
         "🎤 Speech Emotion Recognition</h1>",
@@ -480,12 +459,13 @@ def main():
     )
     st.markdown(
         "<p style='text-align:center; color:#aaa;'>"
-        "Record your voice and let AI detect your emotion</p>",
+        "Record your voice and let AI detect "
+        "your emotion</p>",
         unsafe_allow_html=True
     )
     st.markdown("---")
 
-    # ── Initialize session state ───────────────────────
+    # ── Session state ──────────────────────────────────
     if 'audio_data'    not in st.session_state:
         st.session_state.audio_data    = None
     if 'prediction'    not in st.session_state:
@@ -495,18 +475,17 @@ def main():
     if 'history'       not in st.session_state:
         st.session_state.history       = []
 
-    # ── Three column layout ────────────────────────────
+    # ── Recording section ──────────────────────────────
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        # ── Recording buttons ──────────────────────────
         tab1, tab2 = st.tabs(
             ["🎙️ Record Audio", "📁 Upload Audio"]
         )
 
         with tab1:
             st.markdown(
-                f"<p style='text-align:center; "
+                f"<p style='text-align:center;"
                 f"color:#aaa;'>Will record for "
                 f"{rec_duration} seconds</p>",
                 unsafe_allow_html=True
@@ -515,8 +494,8 @@ def main():
             if st.button("🎙️ Start Recording",
                           use_container_width=True):
                 with st.spinner(
-                    f"🔴 Recording for {rec_duration}s... "
-                    f"Speak now!"
+                    f"🔴 Recording for "
+                    f"{rec_duration}s... Speak now!"
                 ):
                     audio = record_audio(
                         duration=rec_duration,
@@ -528,12 +507,10 @@ def main():
         with tab2:
             uploaded = st.file_uploader(
                 "Upload a WAV file",
-                type=['wav'],
-                help="Upload a .wav file of speech"
+                type=['wav']
             )
-
             if uploaded is not None:
-                audio_bytes = uploaded.read()
+                audio_bytes  = uploaded.read()
                 audio_buffer = io.BytesIO(audio_bytes)
                 y_upload, sr_upload = librosa.load(
                     audio_buffer,
@@ -543,17 +520,17 @@ def main():
                 st.session_state.audio_data = y_upload
                 st.success("✅ Audio uploaded!")
 
-    # ── Analysis Section ───────────────────────────────
+    # ── Analysis section ───────────────────────────────
     if st.session_state.audio_data is not None:
         y = st.session_state.audio_data
 
         st.markdown("---")
         st.markdown(
-            "<h3 style='color:white'>📈 Audio Analysis</h3>",
+            "<h3 style='color:white'>"
+            "📈 Audio Analysis</h3>",
             unsafe_allow_html=True
         )
 
-        # Waveform and MFCC
         col_w, col_m = st.columns(2)
 
         with col_w:
@@ -565,7 +542,6 @@ def main():
         with st.spinner("Extracting features..."):
             fixed_feat, mfcc_seq, y_processed = \
                 preprocess_audio(y, SAMPLE_RATE)
-
             fixed_norm, mfcc_norm = normalize_features(
                 fixed_feat, mfcc_seq,
                 scaler, mfcc_mean, mfcc_std
@@ -577,55 +553,92 @@ def main():
             plt.close()
 
         # ── Prediction ─────────────────────────────────
-        with st.spinner("Analyzing emotion..."):
-            model_info = models[selected_model]
-            pred_class, probs = predict_emotion(
-                model_info, fixed_norm, mfcc_norm
-            )
+        pred_class = 0
+        probs      = np.zeros(NUM_CLASSES)
 
+        with st.spinner("Analyzing emotion..."):
+            if selected_model == '🔀 Ensemble (LSTM + MLP)':
+                pred_class, probs = predict_ensemble(
+                    models, fixed_norm, mfcc_norm
+                )
+            else:
+                model_info = models[selected_model]
+                pred_class, probs = predict_emotion(
+                    model_info, fixed_norm, mfcc_norm
+                )
             st.session_state.prediction    = pred_class
             st.session_state.probabilities = probs
 
-        # ── Emotion Result Display ─────────────────────
+        # ── Emotion result ─────────────────────────────
         st.markdown("---")
         emotion_info = EMOTIONS[pred_class]
+        confidence   = probs[pred_class] * 100
 
         col_r1, col_r2, col_r3 = st.columns([1, 2, 1])
 
         with col_r2:
-            confidence = probs[pred_class] * 100
-            st.markdown(
-                f"""
-                <div class='emotion-card'>
-                    <div style='font-size:80px'>
-                        {emotion_info['emoji']}
-                    </div>
-                    <h1 style='color:{emotion_info["color"]};
-                               font-size:48px;
-                               margin:10px 0'>
-                        {emotion_info['name']}
-                    </h1>
-                    <h3 style='color:#aaa'>
-                        Confidence: {confidence:.1f}%
-                    </h3>
-                    <div style='background:#333;
-                                border-radius:10px;
-                                height:10px;
-                                margin:10px 0'>
-                        <div style='background:
-                            {emotion_info["color"]};
-                            width:{confidence}%;
-                            height:100%;
-                            border-radius:10px'>
+            if confidence >= CONFIDENCE_THRESHOLD:
+                st.markdown(
+                    f"""
+                    <div class='emotion-card'>
+                        <div style='font-size:80px'>
+                            {emotion_info['emoji']}
                         </div>
+                        <h1 style='color:
+                            {emotion_info["color"]};
+                            font-size:48px;
+                            margin:10px 0'>
+                            {emotion_info['name']}
+                        </h1>
+                        <h3 style='color:#aaa'>
+                            Confidence: {confidence:.1f}%
+                        </h3>
+                        <div style='background:#333;
+                                    border-radius:10px;
+                                    height:10px;
+                                    margin:10px 0'>
+                            <div style='background:
+                                {emotion_info["color"]};
+                                width:{confidence}%;
+                                height:100%;
+                                border-radius:10px'>
+                            </div>
+                        </div>
+                        <small style='color:#666'>
+                            Model: {selected_model}
+                        </small>
                     </div>
-                    <small style='color:#666'>
-                        Model: {selected_model}
-                    </small>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+                    """,
+                    unsafe_allow_html=True
+                )
+            else:
+                st.markdown(
+                    f"""
+                    <div class='emotion-card'>
+                        <div style='font-size:80px'>
+                            🤔
+                        </div>
+                        <h1 style='color:#aaa;
+                                   font-size:36px;
+                                   margin:10px 0'>
+                            Uncertain
+                        </h1>
+                        <h3 style='color:#666'>
+                            Best guess:
+                            {emotion_info['name']}
+                            ({confidence:.1f}%)
+                        </h3>
+                        <p style='color:#555;
+                                  font-size:12px'>
+                            Confidence below
+                            {CONFIDENCE_THRESHOLD}%.
+                            Try speaking more clearly
+                            with stronger emotion.
+                        </p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
         # ── Probability chart ──────────────────────────
         st.markdown("---")
@@ -647,8 +660,10 @@ def main():
             st.metric("Confidence",
                       f"{confidence:.1f}%")
         with m3:
-            st.metric("Model Used",
-                      selected_model.split('(')[0].strip())
+            st.metric(
+                "Model Used",
+                selected_model.split('(')[0].strip()
+            )
         with m4:
             runner_up_idx = np.argsort(probs)[-2]
             st.metric(
@@ -658,7 +673,7 @@ def main():
                 f"({probs[runner_up_idx]*100:.1f}%)"
             )
 
-        # ── Add to history ─────────────────────────────
+        # ── History ────────────────────────────────────
         history_entry = {
             'emotion'   : emotion_info['name'],
             'emoji'     : emotion_info['emoji'],
@@ -666,15 +681,18 @@ def main():
             'model'     : selected_model.split('(')[0]
         }
         if (len(st.session_state.history) == 0 or
-            st.session_state.history[-1] != history_entry):
-            st.session_state.history.append(history_entry)
+                st.session_state.history[-1] !=
+                history_entry):
+            st.session_state.history.append(
+                history_entry
+            )
 
-    # ── History Section ────────────────────────────────
+    # ── History section ────────────────────────────────
     if len(st.session_state.history) > 0:
         st.markdown("---")
         st.markdown(
-            "<h3 style='color:white'>📜 Prediction History"
-            "</h3>",
+            "<h3 style='color:white'>"
+            "📜 Prediction History</h3>",
             unsafe_allow_html=True
         )
 
@@ -710,12 +728,13 @@ def main():
     st.markdown("---")
     st.markdown(
         """
-        <div style='text-align:center; color:#555;
-                    padding:20px'>
+        <div style='text-align:center;
+                    color:#555; padding:20px'>
             <p>Speech Emotion Recognition System</p>
             <p>Final Year Major Project —
                Computer Engineering</p>
-            <p>Built with PyTorch + Librosa + Streamlit</p>
+            <p>Built with PyTorch + Librosa +
+               Streamlit</p>
         </div>
         """,
         unsafe_allow_html=True
