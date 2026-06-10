@@ -21,7 +21,7 @@ device = torch.device('cuda' if torch.cuda.is_available()
 print(f"Using device: {device}")
 
 # ── Constants ──────────────────────────────────────────
-NUM_CLASSES   = 8
+NUM_CLASSES   = 6
 BATCH_SIZE    = 32
 EPOCHS        = 100
 LEARNING_RATE = 0.001
@@ -35,8 +35,8 @@ N_MFCC        = 40    # features per time step
 MEL_BANDS     = 128
 MEL_FRAMES    = 130
 
-EMOTION_NAMES = ['neutral', 'calm',    'happy',    'sad',
-                 'angry',   'fearful', 'disgust',  'surprised']
+EMOTION_NAMES = ['neutral', 'happy', 'sad',
+                 'angry', 'fearful', 'disgust']
 
 
 # ══════════════════════════════════════════════════════
