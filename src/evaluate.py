@@ -26,10 +26,10 @@ from sklearn.inspection import permutation_importance
 device = torch.device('cuda' if torch.cuda.is_available()
                        else 'cpu')
 
-EMOTION_NAMES = ['neutral', 'calm',    'happy',    'sad',
-                 'angry',   'fearful', 'disgust',  'surprised']
+EMOTION_NAMES = ['neutral', 'happy', 'sad',
+                 'angry', 'fearful', 'disgust']
 
-NUM_CLASSES   = 8
+NUM_CLASSES   = 6
 
 
 # ══════════════════════════════════════════════════════
