@@ -1,22 +1,22 @@
 {
     "MLP": {
-        "accuracy": 93.75,
-        "f1_macro": 0.9322188355385769,
-        "parameters": 66888
+        "accuracy": 73.66720516962843,
+        "f1_macro": 0.7361107209336549,
+        "parameters": 66758
     },
     "CNN": {
-        "accuracy": 90.97222222222221,
-        "f1_macro": 0.9030793567920343,
-        "parameters": 430856
+        "accuracy": 65.85891222401723,
+        "f1_macro": 0.6597608461113076,
+        "parameters": 430726
     },
     "LSTM": {
-        "accuracy": 96.52777777777779,
-        "f1_macro": 0.962314384280786,
-        "parameters": 348745
+        "accuracy": 76.89822294022616,
+        "f1_macro": 0.7692321772512761,
+        "parameters": 348615
     },
     "CNN-LSTM": {
-        "accuracy": 92.36111111111111,
-        "f1_macro": 0.9275798482168149,
-        "parameters": 982921
+        "accuracy": 73.88260635433494,
+        "f1_macro": 0.7402107806439574,
+        "parameters": 982791
     }
 }
