@@ -1,7 +1,7 @@
 {
     "model": "CNN",
-    "test_accuracy": 90.97,
-    "test_loss": 0.2732,
-    "epochs_trained": 77,
-    "parameters": 430856
+    "test_accuracy": 65.86,
+    "test_loss": 0.922,
+    "epochs_trained": 30,
+    "parameters": 430726
 }
