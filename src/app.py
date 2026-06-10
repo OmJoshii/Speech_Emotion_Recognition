@@ -31,18 +31,16 @@ FIXED_LENGTH = int(SAMPLE_RATE * DURATION)
 N_MFCC       = 40
 HOP_LENGTH   = 512
 N_FFT        = 2048
-NUM_CLASSES  = 8
+NUM_CLASSES  = 6
 
 # Emotion display config
 EMOTIONS = {
-    0: {'name': 'Neutral',   'emoji': '😐', 'color': '#808080'},
-    1: {'name': 'Calm',      'emoji': '😌', 'color': '#4CAF50'},
-    2: {'name': 'Happy',     'emoji': '😄', 'color': '#FFC107'},
-    3: {'name': 'Sad',       'emoji': '😢', 'color': '#2196F3'},
-    4: {'name': 'Angry',     'emoji': '😡', 'color': '#F44336'},
-    5: {'name': 'Fearful',   'emoji': '😨', 'color': '#9C27B0'},
-    6: {'name': 'Disgust',   'emoji': '🤢', 'color': '#795548'},
-    7: {'name': 'Surprised', 'emoji': '😲', 'color': '#FF9800'},
+    0: {'name': 'Neutral',  'emoji': '😐', 'color': '#808080'},
+    1: {'name': 'Happy',    'emoji': '😄', 'color': '#FFC107'},
+    2: {'name': 'Sad',      'emoji': '😢', 'color': '#2196F3'},
+    3: {'name': 'Angry',    'emoji': '😡', 'color': '#F44336'},
+    4: {'name': 'Fearful',  'emoji': '😨', 'color': '#9C27B0'},
+    5: {'name': 'Disgust',  'emoji': '🤢', 'color': '#795548'},
 }
 
 device = torch.device('cpu')  # always CPU for demo app
