@@ -135,14 +135,30 @@ to ensure the model pays equal attention to all emotions.
 
 ## Results
 
+### Dataset: RAVDESS + CREMA-D + TESS + SAVEE (12,374 files)
+
 | Model | Accuracy | F1 Score | Parameters |
 |-------|----------|----------|------------|
-| MLP Baseline | 93.75% | 0.932 | 66,888 |
-| CNN | 90.97% | 0.903 | 430,856 |
-| LSTM | 96.53% | 0.962 | 348,745 |
-| CNN-LSTM | 92.36% | 0.928 | 982,921 |
+| MLP Baseline | 73.67% | 0.74 | 66,758 |
+| CNN | 65.86% | 0.66 | 430,726 |
+| LSTM | 76.90% | 0.77 | 348,615 |
+| CNN-LSTM | 73.88% | 0.74 | 982,791 |
 
-**Best Model: LSTM with 96.53% test accuracy and 0.962 F1 score**
+**Best Model: LSTM with 76.90% test accuracy**
+
+---
+
+### Previous Results (RAVDESS only — for comparison)
+| Model | Accuracy |
+|-------|----------|
+| MLP | 93.75% |
+| CNN | 90.97% |
+| LSTM | 96.53% |
+| CNN-LSTM | 92.36% |
+
+Note: Lower accuracy on combined dataset reflects
+better generalization across 121 diverse speakers
+vs overfitting to 24 studio actors.
 
 ---
 
