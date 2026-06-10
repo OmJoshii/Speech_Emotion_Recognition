@@ -67,7 +67,7 @@ def load_models():
                        map_location=device)
         )
         lstm.eval()
-        models['LSTM (Best — 96.53%)'] = {
+        models['LSTM (Best — 76.90%)'] = {
             'model'     : lstm,
             'input_type': 'mfcc'
         }
@@ -82,7 +82,7 @@ def load_models():
                        map_location=device)
         )
         mlp.eval()
-        models['MLP (93.75%)'] = {
+        models['MLP (73.67%)'] = {
             'model'     : mlp,
             'input_type': 'fixed'
         }
@@ -437,8 +437,8 @@ def main():
 
         # Model metrics display
         metrics = {
-            'LSTM (Best — 96.53%)' : {'acc': 96.53, 'f1': 0.962},
-            'MLP (93.75%)'         : {'acc': 93.75, 'f1': 0.932},
+            'LSTM (Best — 76.90%)' : {'acc': 76.90, 'f1': 0.769},
+            'MLP (73.67%)'         : {'acc': 73.67, 'f1': 0.736},
         }
 
         for model_name, metric in metrics.items():
