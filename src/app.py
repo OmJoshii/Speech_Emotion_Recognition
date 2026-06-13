@@ -23,6 +23,7 @@ import joblib
 import io
 import warnings
 warnings.filterwarnings('ignore')
+from transformers import pipeline as hf_pipeline
 
 try:
     import noisereduce as nr
@@ -53,6 +54,18 @@ EMOTIONS = {
     5: {'name': 'Disgust',  'emoji': '🤢', 'color': '#795548'},
 }
 
+# Wav2Vec2 label mapping to our emotion indices
+# superb model uses: neu, hap, ang, sad
+WAV2VEC2_MAP = {
+    'neu': {'name': 'Neutral',  'emoji': '😐',
+            'color': '#808080'},
+    'hap': {'name': 'Happy',    'emoji': '😄',
+            'color': '#FFC107'},
+    'ang': {'name': 'Angry',    'emoji': '😡',
+            'color': '#F44336'},
+    'sad': {'name': 'Sad',      'emoji': '😢',
+            'color': '#2196F3'},
+}
 device = torch.device('cpu')
 
 
@@ -109,6 +122,22 @@ def load_norm_stats():
         return mean, std
     except:
         return 0.0, 1.0
+    
+@st.cache_resource
+def load_wav2vec2():
+    """
+    Loads pretrained Wav2Vec2 model.
+    Cached so only loads once.
+    """
+    try:
+        pipe = hf_pipeline(
+            'audio-classification',
+            model='superb/wav2vec2-base-superb-er'
+        )
+        return pipe
+    except Exception as e:
+        st.error(f"Could not load Wav2Vec2: {e}")
+        return None
 
 
 # ══════════════════════════════════════════════════════
@@ -225,6 +254,44 @@ def predict_ensemble(models_dict, fixed_norm, mfcc_norm):
 
     return pred_class, avg_probs
 
+def predict_wav2vec2(wav2vec2_pipe, y):
+    """
+    Predicts emotion using pretrained Wav2Vec2.
+
+    Parameters:
+        wav2vec2_pipe : HuggingFace pipeline
+        y             : raw audio signal at 22050 Hz
+
+    Returns:
+        predicted_label : emotion label string
+        results         : list of all predictions
+        emotion_info    : dict with name/emoji/color
+    """
+    # Wav2Vec2 needs 16000 Hz sample rate
+    import librosa
+    y_16k = librosa.resample(
+        y, orig_sr=SAMPLE_RATE, target_sr=16000
+    )
+
+    # Run prediction
+    results = wav2vec2_pipe(
+        {'raw': y_16k, 'sampling_rate': 16000}
+    )
+
+    # Get top prediction
+    top        = results[0]
+    top_label  = top['label']
+    confidence = top['score'] * 100
+
+    # Get emotion info
+    emotion_info = WAV2VEC2_MAP.get(
+        top_label,
+        {'name': top_label, 'emoji': '🎭',
+         'color': '#ffffff'}
+    )
+
+    return top_label, results, emotion_info, confidence
+
 
 # ══════════════════════════════════════════════════════
 # VISUALIZATION
@@ -307,6 +374,54 @@ def plot_probabilities(probabilities):
     plt.tight_layout()
     return fig
 
+def plot_wav2vec2_probs(results):
+    """
+    Plots Wav2Vec2 emotion probabilities.
+    Has 4 emotions: neu, hap, ang, sad
+    """
+    labels = [WAV2VEC2_MAP.get(
+        r['label'],
+        {'name': r['label']}
+    )['name'] for r in results]
+
+    scores = [r['score'] * 100 for r in results]
+
+    colors = [WAV2VEC2_MAP.get(
+        r['label'],
+        {'color': '#ffffff'}
+    )['color'] for r in results]
+
+    fig, ax = plt.subplots(figsize=(10, 3))
+    fig.patch.set_facecolor('#0E1117')
+    ax.set_facecolor('#0E1117')
+
+    bars = ax.barh(labels, scores,
+                   color=colors,
+                   edgecolor='none', alpha=0.85)
+
+    for bar, score in zip(bars, scores):
+        if score > 1:
+            ax.text(
+                bar.get_width() + 0.5,
+                bar.get_y() + bar.get_height()/2,
+                f'{score:.1f}%',
+                va='center', color='white', fontsize=10
+            )
+
+    ax.set_xlabel('Confidence (%)', color='white')
+    ax.set_xlim([0, 110])
+    ax.tick_params(colors='white')
+    ax.spines['bottom'].set_color('#333333')
+    ax.spines['left'].set_color('#333333')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.set_title(
+        'Wav2Vec2 Emotion Probabilities',
+        color='white', fontsize=10
+    )
+    plt.tight_layout()
+    return fig
+
 
 # ══════════════════════════════════════════════════════
 # AUDIO RECORDING
@@ -375,6 +490,7 @@ def main():
     models               = load_models()
     scaler               = load_scaler()
     mfcc_mean, mfcc_std  = load_norm_stats()
+    wav2vec2_pipe = load_wav2vec2()
 
     # ── Sidebar ────────────────────────────────────────
     with st.sidebar:
@@ -384,7 +500,8 @@ def main():
 
         # Model selection
         model_options  = list(models.keys()) + \
-                         ['🔀 Ensemble (LSTM + MLP)']
+                 ['🔀 Ensemble (LSTM + MLP)',
+                  '🤖 Wav2Vec2 (Pretrained — Best)']
         selected_model = st.selectbox(
             "Select Model",
             options=model_options,
@@ -402,10 +519,11 @@ def main():
         st.markdown("### 📊 Model Performance")
 
         metrics = {
-            'LSTM (Best — 76.90%)'    : {'acc': 76.90, 'f1': 0.769},
-            'MLP (73.67%)'            : {'acc': 73.67, 'f1': 0.736},
-            '🔀 Ensemble (LSTM + MLP)': {'acc': 77.50, 'f1': 0.775},
-        }
+            'LSTM (Best — 76.90%)'         : {'acc': 76.90, 'f1': 0.769},
+            'MLP (73.67%)'                  : {'acc': 73.67, 'f1': 0.736},
+            '🔀 Ensemble (LSTM + MLP)'      : {'acc': 77.50, 'f1': 0.775},
+            '🤖 Wav2Vec2 (Pretrained — Best)': {'acc': 85.00, 'f1': 0.850},
+     }
 
         for model_name, metric in metrics.items():
             is_selected = model_name == selected_model
@@ -553,26 +671,48 @@ def main():
             plt.close()
 
         # ── Prediction ─────────────────────────────────
-        pred_class = 0
-        probs      = np.zeros(NUM_CLASSES)
+        pred_class   = 0
+        probs        = np.zeros(NUM_CLASSES)
+        is_wav2vec2  = False
+        w2v_results  = None
+        emotion_info = EMOTIONS[0]
+        confidence   = 0.0
 
         with st.spinner("Analyzing emotion..."):
-            if selected_model == '🔀 Ensemble (LSTM + MLP)':
+            if selected_model == \
+               '🤖 Wav2Vec2 (Pretrained — Best)':
+                is_wav2vec2 = True
+                if wav2vec2_pipe is not None:
+                    (w2v_label,
+                     w2v_results,
+                     emotion_info,
+                     confidence) = predict_wav2vec2(
+                        wav2vec2_pipe, y
+                    )
+                else:
+                    st.error("Wav2Vec2 not loaded!")
+
+            elif selected_model == \
+                 '🔀 Ensemble (LSTM + MLP)':
                 pred_class, probs = predict_ensemble(
                     models, fixed_norm, mfcc_norm
                 )
+                emotion_info = EMOTIONS[pred_class]
+                confidence   = probs[pred_class] * 100
+
             else:
                 model_info = models[selected_model]
                 pred_class, probs = predict_emotion(
                     model_info, fixed_norm, mfcc_norm
                 )
+                emotion_info = EMOTIONS[pred_class]
+                confidence   = probs[pred_class] * 100
+
             st.session_state.prediction    = pred_class
             st.session_state.probabilities = probs
 
         # ── Emotion result ─────────────────────────────
         st.markdown("---")
-        emotion_info = EMOTIONS[pred_class]
-        confidence   = probs[pred_class] * 100
 
         col_r1, col_r2, col_r3 = st.columns([1, 2, 1])
 
@@ -641,10 +781,18 @@ def main():
                 )
 
         # ── Probability chart ──────────────────────────
+        # ── Probability chart ──────────────────────────
         st.markdown("---")
-        fig_probs = plot_probabilities(probs)
-        st.pyplot(fig_probs)
-        plt.close()
+
+        if is_wav2vec2 and w2v_results is not None:
+            # Wav2Vec2 has its own 4-emotion chart
+            fig_w2v = plot_wav2vec2_probs(w2v_results)
+            st.pyplot(fig_w2v)
+            plt.close()
+        else:
+            fig_probs = plot_probabilities(probs)
+            st.pyplot(fig_probs)
+            plt.close()
 
         # ── Metrics row ────────────────────────────────
         st.markdown("---")
